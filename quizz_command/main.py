@@ -15,7 +15,7 @@ import click
 
 base_dir = __file__
 
-base_dir = base_dir[len(base_dir)-8:]
+base_dir = base_dir[len(base_dir)-9:]
 
 
 alphabet = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
