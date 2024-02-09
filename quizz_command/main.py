@@ -129,7 +129,7 @@ def scrapePDF(pdf_path):
         page = doc[page_num]
         token_amount = enc.encode(page.get_text())
         token_total += len(token_amount)
-        print(token_total)
+        
         if token_total > 5000:
             doc.close()
             return text
