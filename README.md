@@ -12,8 +12,11 @@ A simple command-line interface (CLI) app for creating and managing quizzes. Thi
 
 Installation:
 
+       python -m pip install --user pipx
+       python -m pipx ensurepath
        pipx install git+https://github.com/Raz200327/quizz.git
-
+       
+       
 Usage:
 - `quizz -nq` or `quizz --new-quiz`: Create a new quiz.
 - `quizz -pq` or `quizz --prev-quiz`: Use a previous quiz.
