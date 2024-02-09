@@ -13,6 +13,10 @@ import tiktoken
 import requests
 import click
 
+base_dir = __file__
+
+base_dir = base_dir[len(base_dir)-8:]
+
 
 alphabet = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
 
@@ -187,12 +191,12 @@ def main():
                 quiz_name = input("Quiz Name: ")
                 ai = argument_checker("Generate questions with AI? y/n: ", ['y', 'n'])
                 if ai == 'y':
-                    with open(f"{__file__}/database/data.json", "r") as database:
+                    with open(f"{base_dir}/database/data.json", "r") as database:
                         data = json.load(database)
                         if data['api_key'] == "":
                             api_key = input("Please enter OpenAI API key: ")
                             data['api_key'] = api_key
-                            with open(f'{__file__}/database/data.json', "w") as database:
+                            with open(f'{base_dir}/database/data.json', "w") as database:
                                 json.dump(data, database)
                         else:
                             source = is_valid_directory("Directory eg: ./lectures/CSIT123.pdf: ")
@@ -225,10 +229,10 @@ def main():
                                     sys.exit(0)
 
                             new_quiz = {'quiz_name': quiz_name, 'quiz': quiz}
-                            with open(f"{__file__}/database/data.json", "r") as database:
+                            with open(f"{base_dir}/database/data.json", "r") as database:
                                 data = json.load(database)
                                 data['quizzes'].append(new_quiz)
-                                with open(f"{__file__}/database/data.json", "w") as database:
+                                with open(f"{base_dir}/database/data.json", "w") as database:
                                     json.dump(data, database)
 
                             running_quiz(quiz)
@@ -255,14 +259,14 @@ def main():
                             quiz_question['answers'].append({answer: t_f})
                         new_quiz['quiz']['questions'].append(quiz_question)
 
-                    with open(f"{__file__}/database/data.json", "r") as database:
+                    with open(f"{base_dir}/database/data.json", "r") as database:
                         data = json.load(database)
                         data['quizzes'].append(new_quiz)
-                        with open(f"{__file__}/database/data.json", "w") as database:
+                        with open(f"{base_dir}/database/data.json", "w") as database:
                             json.dump(data, database)
 
             elif sys.argv[1] == "-pq" or sys.argv[1] == "--prev-quiz":
-                with open(f"{__file__}/database/data.json", "r") as database:
+                with open(f"{base_dir}/database/data.json", "r") as database:
                     data = json.load(database)
                     if len(data['quizzes']) > 0:
                         for idx, quiz in enumerate(data['quizzes']):
@@ -280,7 +284,7 @@ def main():
 
 
             elif sys.argv[1] == "-del" or sys.argv[1] == "--delete":
-                with open(f"{__file__}/database/data.json", "r") as database:
+                with open(f"{base_dir}/database/data.json", "r") as database:
                     data = json.load(database)
                     if len(data['quizzes']) > 0:
                         for idx, quiz in enumerate(data['quizzes']):
@@ -288,7 +292,7 @@ def main():
                         user = argument_checker("Enter the quiz code to delete: ",
                                                     allowed_inputs=[str(i + 1) for i in range(len(data['quizzes']))])
                         del data['quizzes'][int(user)-1]
-                        with open(f"{__file__}/database/data.json", "w") as database:
+                        with open(f"{base_dir}/database/data.json", "w") as database:
                             json.dump(data, database)
                         print("Deleted")
                     else:
@@ -320,7 +324,7 @@ def main():
                     print("No quizzes yet!")
 
             elif sys.argv[1] == "-pub" or sys.argv[1] == "--publish":
-                with open(f"{__file__}/database/data.json", "r") as database:
+                with open(f"{base_dir}/database/data.json", "r") as database:
                     data = json.load(database)
                     if len(data['quizzes']) > 0:
                         for idx, quiz in enumerate(data['quizzes']):
