@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "quizz-command"
+version = "0.1.0"
+description = ""
+authors = ["Ryan Twemlow <ratwemlow@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+openai = "^1.12.0"
+requests = "^2.31.0"
+tiktoken = "^0.6.0"
+frontend = "^0.0.3"
+pymupdf = "^1.23.21"
+
+[tool.poetry.scripts]
+quizz = "quizz_command.main:main"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
