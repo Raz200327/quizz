@@ -138,7 +138,7 @@ def scrapePDF(pdf_path):
             text += page.get_text()
 
     doc.close()
-    print(text)
+    
     return text
 
 def validate_openai_key():
@@ -165,14 +165,16 @@ def validate_openai_key():
 def generate(api_key, num_questions, facts):
     client = OpenAI(api_key=api_key)
     example = {'questions': [{'question': 'How many countries are in the world?', 'answers':
-        [{'195 countries': True}, {'125 countries': False}, {'45 countries': False}, {'32 countries': False}]}]}
+        [{'195 countries': True}, {'125 countries': False}, {'45 countries': False}, {'32 countries': False}]},
+        {'question': 'How many planets in the solar system?', 'answers':
+        [{'8 planets': True}, {'4 planets': False}, {'9 planets': False}, {'15 planets': False}]}]}
 
     response = client.chat.completions.create(
         model="gpt-3.5-turbo-16k",
         messages=[
             {"role": "system", "content": f"You are a quiz creator. Please create "
                                           f"{num_questions} hard quiz questions about the following lecture slides. Make sure to ONLY respond in Python DICTIONARY format "
-                                          f"STRICTLY following the example below: "
+                                          f"STRICTLY following the example below making {num_questions} questions: "
                                           f"eg {example}"},
             {"role": "user", "content": f"Lecture slides: {facts}"},
         ],
@@ -219,43 +221,41 @@ def main():
                             with open(f'{base_dir}/database/data.json', "w") as database:
                                 json.dump(data, database)
                         else:
-                            source = is_valid_directory("Directory eg: ./lectures/CSIT123.pdf: ")
-                            text = scrapePDF(source)
-                            while True:
-                                num_questions = argument_checker("How many questions?: ", numerical=True)
-                                api_key = data['api_key']
-                                stop_event = threading.Event()
-                                spinner_thread = threading.Thread(target=loading_spinner, args=(stop_event,))
-                                spinner_thread.start()
+                            api_key = data['api_key']
 
-                                quiz = generate(api_key, num_questions, text)
-                                try:
-                                    quiz = ast.literal_eval(quiz)
-                                    quiz = check_quality(quiz)
-                                    if not quiz:
-                                        raise QuizCreationError
-                                    stop_event.set()
-                                    spinner_thread.join()
-                                    print("Done")
-                                    break
-                                except SyntaxError:
-                                    print("Unfortunately we have run out of context.\nPlease choose a smaller amount of questions")
-                                    stop_event.set()
-                                    spinner_thread.join()
-                                    sys.exit(0)
+                        source = is_valid_directory("Directory eg: ./lectures/CSIT123.pdf: ")
+                        text = scrapePDF(source)
+                        while True:
+                            num_questions = argument_checker("How many questions?: ", numerical=True)
+                            stop_event = threading.Event()
+                            spinner_thread = threading.Thread(target=loading_spinner, args=(stop_event,))
+                            spinner_thread.start()
+                            quiz = generate(api_key, num_questions, text)
+                            try:
+                                quiz = ast.literal_eval(quiz)
+                                quiz = check_quality(quiz)
+                                if not quiz:
+                                    raise QuizCreationError
+                                stop_event.set()
+                                spinner_thread.join()
+                                print("Done")
+                                break
+                            except SyntaxError:
+                                print("Unfortunately we have run out of context.\nPlease choose a smaller amount of questions")
+                                stop_event.set()
+                                spinner_thread.join()
+                                sys.exit(0)
+                            except QuizCreationError:
+                                print(QuizCreationError().message())
+                                sys.exit(0)
+                        new_quiz = {'quiz_name': quiz_name, 'quiz': quiz}
+                        with open(f"{base_dir}/database/data.json", "r") as database:
+                            data = json.load(database)
+                            data['quizzes'].append(new_quiz)
+                            with open(f"{base_dir}/database/data.json", "w") as database:
+                                json.dump(data, database)
+                        running_quiz(quiz)
 
-                                except QuizCreationError:
-                                    print(QuizCreationError().message())
-                                    sys.exit(0)
-
-                            new_quiz = {'quiz_name': quiz_name, 'quiz': quiz}
-                            with open(f"{base_dir}/database/data.json", "r") as database:
-                                data = json.load(database)
-                                data['quizzes'].append(new_quiz)
-                                with open(f"{base_dir}/database/data.json", "w") as database:
-                                    json.dump(data, database)
-
-                            running_quiz(quiz)
                 else:
 
                     new_quiz = {"quiz_name": quiz_name, "quiz": {'questions': []}}
@@ -322,7 +322,7 @@ def main():
                 help()
 
             elif sys.argv[1] == "-pd" or sys.argv[1] == "--pub-quiz":
-                with requests.get("http://127.0.0.1:8008/quizzes") as response:
+                with requests.get("http://194.195.124.19:5000/quizzes") as response:
                     if response.status_code == 200:
                         data = response.json()
                         
@@ -362,7 +362,7 @@ def main():
                                                 allowed_inputs=[str(i + 1) for i in range(len(data['quizzes']))])
                         chosen_quiz = data['quizzes'][int(user) - 1]
                         content = {"new_quiz": chosen_quiz}
-                        with requests.get("http://127.0.0.1:8008/quizzes") as response:
+                        with requests.get("http://194.195.124.19:5000/quizzes") as response:
                             if response.status_code == 200:
                                 database = response.json()
 
@@ -382,13 +382,13 @@ def main():
                                 subject_selection = input("New subject name: ")
                                 sent_package = {"new-quiz": chosen_quiz, "index": 0, "new-sub": True, "sub-name": subject_selection}            
                                         
-                            with requests.post("http://127.0.0.1:8008/add-quiz", json=sent_package) as response:
+                            with requests.post("http://194.195.124.19:5000/add-quiz", json=sent_package) as response:
                                 print(response.json()["message"])
                         else:
                             subject_selection = input("New subject name: ")
                             sent_package = {"new-quiz": chosen_quiz, "index": 0, "new-sub": True, "sub-name": subject_selection}            
                                         
-                            with requests.post("http://127.0.0.1:8008/add-quiz", json=sent_package) as response:
+                            with requests.post("http://194.195.124.19:5000/add-quiz", json=sent_package) as response:
                                 print(response.json()["message"])
 
                     else:
