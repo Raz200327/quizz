@@ -377,7 +377,7 @@ def main():
                             if user == "1":
 
                                 subject_selection = argument_checker("Subject selection: ", allowed_inputs=[str(i + 1) for i in range(len(database['subjects']))])
-                                sent_package = {"new-quiz": chosen_quiz, "index": int(subject_selection)-1, "new-sub": True, "sub-name": subject_selection}            
+                                sent_package = {"new-quiz": chosen_quiz, "index": int(subject_selection)-1, "new-sub": False, "sub-name": subject_selection}            
                             else:
                                 subject_selection = input("New subject name: ")
                                 sent_package = {"new-quiz": chosen_quiz, "index": 0, "new-sub": True, "sub-name": subject_selection}            
