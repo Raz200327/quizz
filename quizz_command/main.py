@@ -12,6 +12,7 @@ import fitz
 import tiktoken
 import requests
 import click
+import openai
 
 base_dir = __file__
 
@@ -140,6 +141,25 @@ def scrapePDF(pdf_path):
     print(text)
     return text
 
+def validate_openai_key():
+    while True:
+        try:
+            user = input("Please enter OpenAI API key: ")
+
+            client = OpenAI(api_key=user)
+            response = client.chat.completions.create(
+            model="gpt-3.5-turbo-16k",
+            messages=[
+                {"role": "system", "content": "Testing"},
+                {"role": "user", "content": f"Testing"},
+            ],
+            max_tokens=20,
+            temperature=0
+        )
+            return user
+        except openai.AuthenticationError:
+            print("Invalid API Key")
+
 
 
 def generate(api_key, num_questions, facts):
@@ -194,7 +214,7 @@ def main():
                     with open(f"{base_dir}/database/data.json", "r") as database:
                         data = json.load(database)
                         if data['api_key'] == "":
-                            api_key = input("Please enter OpenAI API key: ")
+                            api_key = validate_openai_key()
                             data['api_key'] = api_key
                             with open(f'{base_dir}/database/data.json', "w") as database:
                                 json.dump(data, database)
@@ -302,26 +322,35 @@ def main():
                 help()
 
             elif sys.argv[1] == "-pd" or sys.argv[1] == "--pub-quiz":
-                with requests.get("http://194.195.124.19:5050/quizzes") as response:
+                with requests.get("http://127.0.0.1:8008/quizzes") as response:
                     if response.status_code == 200:
                         data = response.json()
+                        
                     else:
                         print("Network error")
                         sys.exit(0)
 
+                if len(data['subjects']) > 0:
+                    
+                    for idx, subject in enumerate(data['subjects']):
+                        print(f"{idx + 1} - {subject['subject-name']}")
+                    
+                    user = argument_checker("Enter the subject code: ",
+                                            allowed_inputs=[str(i + 1) for i in range(len(data['subjects']))])
+                    subject = data['subjects'][int(user) - 1]
+                    if len(subject['quizzes']) > 0:
+                        for idx, quiz in enumerate(subject['quizzes']):
+                            print(f"{idx + 1} - {quiz['quiz_name']}")
 
-                if len(data['quizzes']) > 0:
-                    for idx, quiz in enumerate(data['quizzes']):
-                        print(f"{idx + 1} - {quiz['quiz_name']}")
-
-                    user = argument_checker("Enter the quiz code: ",
-                                            allowed_inputs=[str(i + 1) for i in range(len(data['quizzes']))])
-                    quiz = data['quizzes'][int(user) - 1]['quiz']
-
-                    running_quiz(quiz)
+                        quiz_selection = argument_checker("Enter the quiz code: ",
+                                                allowed_inputs=[str(i + 1) for i in range(len(subject['quizzes']))])
+                        quiz = subject["quizzes"][int(quiz_selection) - 1]["quiz"]
+                        running_quiz(quiz)
+                    else:
+                        print("No quizzes yet!")
 
                 else:
-                    print("No quizzes yet!")
+                    print("No subjects yet!")
 
             elif sys.argv[1] == "-pub" or sys.argv[1] == "--publish":
                 with open(f"{base_dir}/database/data.json", "r") as database:
@@ -332,9 +361,36 @@ def main():
                         user = argument_checker("Enter the quiz code to publish: ",
                                                 allowed_inputs=[str(i + 1) for i in range(len(data['quizzes']))])
                         chosen_quiz = data['quizzes'][int(user) - 1]
+                        content = {"new_quiz": chosen_quiz}
+                        with requests.get("http://127.0.0.1:8008/quizzes") as response:
+                            if response.status_code == 200:
+                                database = response.json()
 
-                        with requests.post("http://194.195.124.19:5050/add-quiz", json=chosen_quiz) as response:
-                            print(response.json()["message"])
+                            else:
+                                print("Network error")
+                                sys.exit(0)
+
+                        if len(database['subjects']) > 0:
+                            for idx, subject in enumerate(database['subjects']):
+                                print(f"{idx+1} - {subject['subject-name']}")
+                            user = argument_checker("Would you like to publish to an exisiting subject or create a new one?\n1 Use an exisiting subject\n2 Create a new subject\nUser: ", allowed_inputs=["1", "2"])
+                            if user == "1":
+
+                                subject_selection = argument_checker("Subject selection: ", allowed_inputs=[str(i + 1) for i in range(len(database['subjects']))])
+                                sent_package = {"new-quiz": chosen_quiz, "index": int(subject_selection)-1, "new-sub": True, "sub-name": subject_selection}            
+                            else:
+                                subject_selection = input("New subject name: ")
+                                sent_package = {"new-quiz": chosen_quiz, "index": 0, "new-sub": True, "sub-name": subject_selection}            
+                                        
+                            with requests.post("http://127.0.0.1:8008/add-quiz", json=sent_package) as response:
+                                print(response.json()["message"])
+                        else:
+                            subject_selection = input("New subject name: ")
+                            sent_package = {"new-quiz": chosen_quiz, "index": 0, "new-sub": True, "sub-name": subject_selection}            
+                                        
+                            with requests.post("http://127.0.0.1:8008/add-quiz", json=sent_package) as response:
+                                print(response.json()["message"])
+
                     else:
                         print("No quizzes yet!")
 
