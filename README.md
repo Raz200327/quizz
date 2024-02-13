@@ -7,7 +7,7 @@ Quizz CLI App
      | |_| | |_| || | / /_ / /_ 
       \__\_\\___/|___/____/____|
 
-Description:
+
 A simple command-line interface (CLI) app for creating and managing quizzes. This app allows users to create new quizzes, use or delete previous quizzes, access a public quiz database and publish personal quizzes to the public database.
 
 Installation:
